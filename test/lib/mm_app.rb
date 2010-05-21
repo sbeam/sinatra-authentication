@@ -4,10 +4,8 @@ require 'haml'
 require 'mongo_mapper'
 require File.join(File.dirname(__FILE__), '../../lib/sinatra-authentication')
 
-logger = Logger.new($stdout)
-MongoMapper.connection = Mongo::Connection.new('db.mongohq.com', 27017, :logger => logger)
-MongoMapper.database = "fdbk"
-MongoMapper.database.authenticate(ENV['mongohq_user'], ENV['mongohq_pass'])
+
+MongoMapper.database = 'sinatratest'
 
 class TestApp < Sinatra::Base
   use Rack::Session::Cookie, :secret => "heyhihello"
