@@ -11,9 +11,11 @@ module Sinatra
       #sinatra 9.1.1 doesn't have multiple view capability anywhere
       #so to get around I have to do it totally manually by
       #loading the view from this path into a string and rendering it
-      set :sinatra_authentication_view_path, Pathname(__FILE__).dirname.expand_path + "views/"
+      app.configure do
+        app.set :sinatra_authentication_view_path, Pathname(__FILE__).dirname.expand_path + "views/"
+      end
 
-      get '/users' do
+      app.get '/users' do
         login_required
         redirect "/" unless current_user.admin?
 
@@ -25,7 +27,7 @@ module Sinatra
         end
       end
 
-      get '/users/:id' do
+      app.get '/users/:id' do
         login_required
 
         @user = User.get(:id => params[:id])
@@ -33,7 +35,7 @@ module Sinatra
       end
 
       #convenience for ajax but maybe entirely stupid and unnecesary
-      get '/logged_in' do
+      app.get '/logged_in' do
         if session[:user]
           "true"
         else
@@ -41,11 +43,11 @@ module Sinatra
         end
       end
 
-      get '/login' do
+      app.get '/login' do
         haml get_view_as_string("login.haml"), :layout => use_layout?
       end
 
-      post '/login' do
+      app.post '/login' do
         if user = User.authenticate(params[:email], params[:password])
           session[:user] = user.id
 
@@ -68,7 +70,7 @@ module Sinatra
         end
       end
 
-      get '/logout' do
+      app.get '/logout' do
         session[:user] = nil
         if Rack.const_defined?('Flash')
           flash[:notice] = "Logout successful."
@@ -76,11 +78,11 @@ module Sinatra
         redirect '/'
       end
 
-      get '/signup' do
+      app.get '/signup' do
         haml get_view_as_string("signup.haml"), :layout => use_layout?
       end
 
-      post '/signup' do
+      app.post '/signup' do
         @user = User.set(params[:user])
         if @user && @user.id
           session[:user] = @user.id
@@ -96,14 +98,14 @@ module Sinatra
         end
       end
 
-      get '/users/:id/edit' do
+      app.get '/users/:id/edit' do
         login_required
         redirect "/users" unless current_user.admin? || current_user.id.to_s == params[:id]
         @user = User.get(:id => params[:id])
         haml get_view_as_string("edit.haml"), :layout => use_layout?
       end
 
-      post '/users/:id/edit' do
+      app.post '/users/:id/edit' do
         login_required
         redirect "/users" unless current_user.admin? || current_user.id.to_s == params[:id]
 
@@ -127,7 +129,7 @@ module Sinatra
         end
       end
 
-      get '/users/:id/delete' do
+      app.get '/users/:id/delete' do
         login_required
         redirect "/users" unless current_user.admin? || current_user.id.to_s == params[:id]
 
@@ -229,7 +231,7 @@ module Sinatra
         logout_parameters = html_attributes
         # a tad janky?
         logout_parameters.delete(:rel)
-        result += "<a href='/users/#{current_user.id}/edit' class='#{css_classes} sinatra-authentication-edit' #{parameters}>Edit account</a> "
+        result += "<a href='/users/#{current_user.object_id}/edit' class='#{css_classes} sinatra-authentication-edit' #{parameters}>Edit account</a> "
         if Sinatra.const_defined?('FacebookObject')
           if fb[:user]
             result += "<a href='javascript:FB.Connect.logoutAndRedirect(\"/logout\");' class='#{css_classes} sinatra-authentication-logout' #{logout_parameters}>Logout</a>"
